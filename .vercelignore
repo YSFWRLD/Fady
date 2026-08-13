@@ -1,0 +1,15 @@
+# Never upload local env files to a deployment. Real values live in the Vercel
+# project's Environment Variables, injected at build and runtime.
+.env
+.env.*
+!.env.example
+
+# Local-only artifacts.
+.next
+node_modules
+.git
+
+# Source documents and migrations are not needed by the running app.
+supabase/migrations
+fadhi-prd.md
+*.html
