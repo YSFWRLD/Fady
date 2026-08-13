@@ -51,6 +51,8 @@ environment, run them **in order** in the Supabase SQL editor (or
 | `supabase/migrations/0004_storage_and_realtime.sql` | `avatars` / `group-images` buckets, storage policies, realtime publication |
 | `supabase/migrations/0005_function_grants_hardening.sql` | Revokes the PUBLIC `EXECUTE` default so `anon` cannot reach the RPCs |
 | `supabase/migrations/0006_fix_vote_ambiguity.sql` | Fixes a 42702 name collision that made every vote fail |
+| `supabase/migrations/0007_lock_down_client_writes.sql` | Revokes client table DML; all writes go through RPCs |
+| `supabase/migrations/0008_daily_reminder_window.sql` | Adapts the reminder window to a daily cron |
 
 `0005` matters: Postgres grants `EXECUTE` on new functions to `PUBLIC`, which
 left every security-definer function reachable by `anon` over
@@ -146,8 +148,17 @@ proxy.ts                      session refresh + AUTH-004/AUTH-005 routing
 1. Push to GitHub and import the repo in Vercel.
 2. Add the five environment variables from §1.1 (`NEXT_PUBLIC_SITE_URL` = the
    production origin).
-3. `vercel.json` already registers the hourly cron hitting `/api/cron`; Vercel
-   sends `Authorization: Bearer $CRON_SECRET` automatically.
+3. `vercel.json` registers a **daily** cron hitting `/api/cron` at 06:00 UTC
+   (09:00 Saudi time); Vercel sends `Authorization: Bearer $CRON_SECRET`
+   automatically.
+
+   Daily is a Hobby-plan limit — Vercel rejects any more frequent schedule.
+   Migration `0008` widens the reminder window to 48 hours to match, so each
+   attendee still gets exactly one reminder (enforced by the dedupe index), but
+   1–2 days ahead rather than the exact 24 hours NOT-007 specifies. Restoring
+   exact behaviour needs an hourly cron: either the Vercel Pro plan, or any
+   external scheduler calling `/api/cron` hourly with the same bearer token,
+   after reverting the window in `run_scheduled_jobs` to 23–25 hours.
 4. Add the production `/auth/callback` URL in Supabase.
 
 ---
