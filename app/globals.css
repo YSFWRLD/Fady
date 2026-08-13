@@ -1,0 +1,454 @@
+@import "tailwindcss";
+@import "@phosphor-icons/web/bold";
+@import "@phosphor-icons/web/fill";
+
+/* ============================================================================
+   فاضي؟ design tokens — ported verbatim from the approved prototype.
+   Light is the default; dark is a cool violet-ink night surface, not a warm
+   inverse. Every colour the product uses is declared here, never inline.
+   ========================================================================== */
+
+:root {
+  /* ---- warm neutral ramp ---------------------------------------- */
+  --warm-0: #fffdfb;
+  --warm-50: #fdf7f3;
+  --warm-100: #f7ede7;
+  --warm-200: #efddd4;
+  --warm-300: #dfc5b9;
+  --warm-400: #c4a69a;
+  --warm-500: #a6897e;
+  --warm-600: #7c665c;
+  --warm-700: #55403a;
+  --warm-800: #382823;
+  --warm-900: #221714;
+  --warm-950: #150d0b;
+
+  /* ---- coral (primary) ------------------------------------------ */
+  --coral-50: #fff1ed;
+  --coral-100: #ffe0d8;
+  --coral-200: #ffbfaf;
+  --coral-300: #ff9682;
+  --coral-400: #f87157;
+  --coral-500: #f0553c;
+  --coral-600: #d63c24;
+  --coral-700: #ac2c18;
+
+  /* ---- plum (secondary) ----------------------------------------- */
+  --plum-50: #fceef4;
+  --plum-100: #f7dce8;
+  --plum-200: #ebb4cd;
+  --plum-300: #d386ab;
+  --plum-400: #a64e7b;
+  --plum-500: #8a3760;
+  --plum-600: #7a2e52;
+  --plum-700: #5c1f3d;
+
+  /* ---- party support -------------------------------------------- */
+  --sun-300: #ffdc7a;
+  --sun-400: #ffc63d;
+  --sun-500: #f2a81b;
+  --mint-300: #8de8ce;
+  --mint-400: #3ecba6;
+  --mint-500: #1fa283;
+  --sky-300: #a9d9f5;
+  --sky-400: #4fa8dc;
+
+  /* ---- semantic: surfaces & text -------------------------------- */
+  --bg-page: var(--warm-0);
+  --bg-sunken: var(--warm-50);
+  --bg-band: var(--plum-600);
+  --surface-card: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-quiet: var(--warm-100);
+  --surface-inverse: var(--warm-900);
+
+  --text-strong: var(--warm-900);
+  --text-body: var(--warm-800);
+  --text-muted: var(--warm-600);
+  --text-faint: var(--warm-500);
+  --text-on-accent: #ffffff;
+  --text-on-band: var(--plum-50);
+  --text-link: var(--coral-600);
+  --text-link-hover: var(--plum-600);
+
+  --border-hairline: var(--warm-200);
+  --border-strong: var(--warm-900);
+  --border-accent: var(--coral-500);
+
+  /* ---- semantic: intent ----------------------------------------- */
+  --accent: var(--coral-500);
+  --accent-hover: var(--coral-600);
+  --accent-press: var(--coral-700);
+  --accent-quiet: var(--coral-50);
+  --accent-2: var(--plum-600);
+  --accent-2-quiet: var(--plum-50);
+  --celebrate: var(--sun-400);
+  --celebrate-quiet: #fff4d6;
+  --celebrate-fg: var(--warm-800);
+  --celebrate-dot: var(--sun-300);
+  --success: var(--mint-500);
+  --success-quiet: #e4faf3;
+  --warning: var(--sun-500);
+  --danger: #c81e4c;
+  --danger-quiet: #fde7ed;
+
+  /* ---- availability heat (group calendar) ----------------------- */
+  --heat-0: var(--warm-100);
+  --heat-1: var(--coral-100);
+  --heat-2: var(--coral-300);
+  --heat-3: var(--coral-500);
+  --heat-full: var(--plum-600);
+
+  /* ---- 30 member identity tokens (GRP-010: never the sole cue) --- */
+  --member-01: oklch(0.63 0.155 0);
+  --member-02: oklch(0.63 0.155 12);
+  --member-03: oklch(0.63 0.155 24);
+  --member-04: oklch(0.63 0.155 36);
+  --member-05: oklch(0.63 0.155 48);
+  --member-06: oklch(0.63 0.155 60);
+  --member-07: oklch(0.63 0.155 72);
+  --member-08: oklch(0.63 0.155 84);
+  --member-09: oklch(0.63 0.155 96);
+  --member-10: oklch(0.63 0.155 108);
+  --member-11: oklch(0.63 0.155 120);
+  --member-12: oklch(0.63 0.155 132);
+  --member-13: oklch(0.63 0.155 144);
+  --member-14: oklch(0.63 0.155 156);
+  --member-15: oklch(0.63 0.155 168);
+  --member-16: oklch(0.63 0.155 180);
+  --member-17: oklch(0.63 0.155 192);
+  --member-18: oklch(0.63 0.155 204);
+  --member-19: oklch(0.63 0.155 216);
+  --member-20: oklch(0.63 0.155 228);
+  --member-21: oklch(0.63 0.155 240);
+  --member-22: oklch(0.63 0.155 252);
+  --member-23: oklch(0.63 0.155 264);
+  --member-24: oklch(0.63 0.155 276);
+  --member-25: oklch(0.63 0.155 288);
+  --member-26: oklch(0.63 0.155 300);
+  --member-27: oklch(0.63 0.155 312);
+  --member-28: oklch(0.63 0.155 324);
+  --member-29: oklch(0.63 0.155 336);
+  --member-30: oklch(0.63 0.155 348);
+}
+
+[data-theme="dark"] {
+  --ink-950: #0d0b12;
+  --ink-900: #14111c;
+  --ink-800: #1c1827;
+  --ink-700: #262034;
+  --ink-600: #332b45;
+  --ink-500: #453b5c;
+
+  --bg-page: var(--ink-950);
+  --bg-sunken: var(--ink-900);
+  --bg-band: #3a1d33;
+  --surface-card: var(--ink-800);
+  --surface-raised: var(--ink-700);
+  --surface-quiet: var(--ink-700);
+  --surface-inverse: #f2eff8;
+
+  --text-strong: #f7f4fe;
+  --text-body: #e4def2;
+  --text-muted: #a79cc0;
+  --text-faint: #7d7397;
+  --text-on-accent: #24090a;
+  --text-on-band: #fce8f2;
+  --text-link: #ff8f72;
+  --text-link-hover: #ffb6a1;
+
+  --border-hairline: var(--ink-600);
+  --border-strong: #e4def2;
+  --border-accent: #ff7a5e;
+
+  --accent: #ff7a5e;
+  --accent-hover: #ff9a82;
+  --accent-press: #f0553c;
+  --accent-quiet: #3a1e23;
+  --accent-2: #f0a6ca;
+  --accent-2-quiet: #33203a;
+  --celebrate: #ffd166;
+  --celebrate-quiet: #221c33;
+  --celebrate-fg: #ffd166;
+  --celebrate-dot: rgba(255, 209, 102, 0.22);
+  --success: #5fe3bc;
+  --success-quiet: #14322f;
+  --warning: #ffc63d;
+  --danger: #ff7d9c;
+  --danger-quiet: #38182a;
+
+  --heat-0: var(--ink-700);
+  --heat-1: #4a2a3d;
+  --heat-2: #8a3a4a;
+  --heat-3: #ff7a5e;
+  --heat-full: #f0a6ca;
+
+  --member-01: oklch(0.74 0.145 0);
+  --member-02: oklch(0.74 0.145 12);
+  --member-03: oklch(0.74 0.145 24);
+  --member-04: oklch(0.74 0.145 36);
+  --member-05: oklch(0.74 0.145 48);
+  --member-06: oklch(0.74 0.145 60);
+  --member-07: oklch(0.74 0.145 72);
+  --member-08: oklch(0.74 0.145 84);
+  --member-09: oklch(0.74 0.145 96);
+  --member-10: oklch(0.74 0.145 108);
+  --member-11: oklch(0.74 0.145 120);
+  --member-12: oklch(0.74 0.145 132);
+  --member-13: oklch(0.74 0.145 144);
+  --member-14: oklch(0.74 0.145 156);
+  --member-15: oklch(0.74 0.145 168);
+  --member-16: oklch(0.74 0.145 180);
+  --member-17: oklch(0.74 0.145 192);
+  --member-18: oklch(0.74 0.145 204);
+  --member-19: oklch(0.74 0.145 216);
+  --member-20: oklch(0.74 0.145 228);
+  --member-21: oklch(0.74 0.145 240);
+  --member-22: oklch(0.74 0.145 252);
+  --member-23: oklch(0.74 0.145 264);
+  --member-24: oklch(0.74 0.145 276);
+  --member-25: oklch(0.74 0.145 288);
+  --member-26: oklch(0.74 0.145 300);
+  --member-27: oklch(0.74 0.145 312);
+  --member-28: oklch(0.74 0.145 324);
+  --member-29: oklch(0.74 0.145 336);
+  --member-30: oklch(0.74 0.145 348);
+}
+
+:root {
+  /* next/font injects the three families as --font-baloo / --font-tajawal /
+     --font-plex on <html>; the stacks below keep the prototype's roles. */
+  --font-display: var(--font-baloo), "Tajawal", system-ui, sans-serif;
+  --font-body: var(--font-tajawal), var(--font-baloo), system-ui, sans-serif;
+  --font-mono: var(--font-plex), ui-monospace, monospace;
+
+  /* display = Baloo, always 700/800, tight leading, headline-only */
+  --display-xl: 800 62px/0.98 var(--font-display);
+  --display-lg: 800 48px/1 var(--font-display);
+  --display-md: 800 34px/1.05 var(--font-display);
+  --display-sm: 700 26px/1.1 var(--font-display);
+  --display-xs: 700 20px/1.15 var(--font-display);
+
+  /* body = Tajawal */
+  --title-lg: 700 22px/1.3 var(--font-body);
+  --title-md: 700 18px/1.35 var(--font-body);
+  --title-sm: 700 16px/1.4 var(--font-body);
+  --body-lg: 400 17px/1.6 var(--font-body);
+  --body-md: 400 15px/1.6 var(--font-body);
+  --body-sm: 400 14px/1.55 var(--font-body);
+  --label-md: 500 15px/1.2 var(--font-body);
+  --label-sm: 500 13px/1.2 var(--font-body);
+  --mono-sm: 400 12px/1.4 var(--font-mono);
+
+  --tracking-display: -0.005em;
+  --tracking-label: 0.01em;
+
+  /* cartoon-forward: nothing sharper than 14px, pills everywhere */
+  --radius-xs: 10px;
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-xl: 36px;
+  --radius-2xl: 44px;
+  --radius-pill: 999px;
+
+  --border-width: 2px;
+  --border-width-thick: 3px;
+
+  /* playful tilts — only on sticker cards, alternate a/b down a list */
+  --tilt-a: -1.6deg;
+  --tilt-b: 1.4deg;
+  --tilt-c: -0.8deg;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  --gutter: var(--space-5);
+  --stack: var(--space-4);
+  --card-pad: var(--space-5);
+  --tap-min: 44px; /* WCAG 2.2 AA target */
+  --tap-gap: var(--space-2);
+  --bottom-nav-h: 68px;
+  --header-h: 56px;
+  --feed-max: 480px;
+
+  /* sticker system: a solid colour "lip" under the card + a soft cast shadow */
+  --sticker-lip: var(--warm-200);
+  --shadow-sticker: 0 10px 0 -2px var(--sticker-lip), 0 20px 32px -20px rgba(34, 23, 20, 0.45);
+  --shadow-sticker-sm: 0 6px 0 -2px var(--sticker-lip), 0 12px 20px -14px rgba(34, 23, 20, 0.4);
+  --shadow-card: 0 14px 26px -18px rgba(34, 23, 20, 0.4);
+  --shadow-pop: 0 24px 44px -22px rgba(34, 23, 20, 0.5);
+  --shadow-press: 0 2px 0 -1px var(--sticker-lip);
+  --ring-focus: 0 0 0 3px var(--warm-0), 0 0 0 6px var(--coral-400);
+
+  --ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-pop: 320ms;
+}
+
+[data-theme="dark"] {
+  /* the solid lip reads as a muddy band on a dark page — soft cast shadow only */
+  --sticker-lip: rgba(6, 4, 12, 0.6);
+  --shadow-sticker: 0 14px 30px -14px rgba(4, 2, 10, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-sticker-sm: 0 10px 22px -12px rgba(4, 2, 10, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-card: 0 12px 24px -16px rgba(4, 2, 10, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --shadow-pop: 0 24px 44px -22px rgba(4, 2, 10, 0.95);
+  --ring-focus: 0 0 0 3px #0d0b12, 0 0 0 6px #ff7a5e;
+}
+
+/* §8.8: no essential state relies on animation. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-pop: 0ms;
+    --ease-pop: linear;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+html {
+  direction: rtl;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-page);
+  color: var(--text-body);
+  font: var(--body-md);
+  -webkit-font-smoothing: antialiased;
+  text-wrap: pretty;
+  min-height: 100dvh;
+}
+
+a {
+  color: var(--text-link);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--text-link-hover);
+}
+
+*:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+  border-radius: var(--radius-sm);
+}
+
+::selection {
+  background: var(--coral-200);
+  color: var(--warm-900);
+}
+
+@keyframes fady-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fady-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes fady-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Sticky action bar (availability editor). Sits above the bottom nav on mobile
+   and flush to the viewport bottom on desktop, where the nav is hidden. The
+   gradient stops content from bleeding through as it scrolls underneath. */
+.fady-sticky-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+  padding: var(--space-4) 0 calc(var(--bottom-nav-h) + var(--space-4));
+  background: linear-gradient(to top, var(--bg-page) 65%, transparent);
+}
+
+@media (min-width: 901px) {
+  .fady-sticky-actions {
+    padding-bottom: var(--space-4);
+  }
+}
+
+/* Theme-toggle icon swap. Doing this in CSS rather than React state keeps the
+   toggle free of hydration mismatches — the attribute is set before paint. */
+.fady-icon-dark {
+  display: none;
+}
+
+[data-theme="dark"] .fady-icon-light {
+  display: none;
+}
+
+[data-theme="dark"] .fady-icon-dark {
+  display: inline;
+}
+
+/* Screen-reader-only helper for §8.8 live regions and labels. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* §8.7 responsive shell: the desktop rail and sidebar collapse on narrow
+   viewports so the mobile feed is the primary design. */
+@media (max-width: 1200px) {
+  .fady-rail {
+    display: none !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .fady-sidebar {
+    display: none !important;
+  }
+}
+
+@media (min-width: 901px) {
+  .fady-bottom-nav,
+  .fady-mobile-header {
+    display: none !important;
+  }
+}
