@@ -16,6 +16,7 @@ export type ErrorCode =
   | "INVITE_REVOKED"
   | "GROUP_FULL"
   | "ROUND_CLOSED"
+  | "EMAIL_SEND_LIMIT"
   | "NETWORK_ERROR";
 
 export type ActionError = { code: ErrorCode; field?: string };
@@ -41,6 +42,9 @@ const MESSAGES: Record<ErrorCode, string> = {
   INVITE_REVOKED: "الرابط ما عاد شغال",
   GROUP_FULL: "القروب مكتمل",
   ROUND_CLOSED: "التصويت أُقفل",
+  // Not the user's fault: the project hit its hourly email quota. Say so
+  // plainly instead of implying they did something wrong.
+  EMAIL_SEND_LIMIT: "ما قدرنا نرسل الإيميل الحين، المشكلة من عندنا. جرّب بعد شوي",
   NETWORK_ERROR: "ما حفظنا التغيير، جرّب مرة ثانية",
 };
 

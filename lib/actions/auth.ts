@@ -42,6 +42,12 @@ export async function signUp(input: {
   });
 
   if (error) {
+    // Supabase returns 429 both for "this IP is signing up too fast" and for
+    // "the project used up its hourly email quota" — very different causes. The
+    // second is a project-wide limit any user can trip through no fault of
+    // their own, so it gets its own message rather than accusing them of
+    // hammering the form.
+    if (isEmailSendLimit(error)) return fail("EMAIL_SEND_LIMIT");
     if (error.status === 429) return fail("RATE_LIMITED");
     // A duplicate address is reported as the same neutral success state.
     if (error.message.toLowerCase().includes("already")) return ok({ confirmationRequired: true });
@@ -49,6 +55,13 @@ export async function signUp(input: {
   }
 
   return ok({ confirmationRequired: true });
+}
+
+/** Distinguishes the project-wide email quota from per-IP request throttling. */
+function isEmailSendLimit(error: { code?: string; message?: string }): boolean {
+  if (error.code === "over_email_send_rate_limit") return true;
+  const message = (error.message ?? "").toLowerCase();
+  return message.includes("email rate limit") || message.includes("over_email_send_rate_limit");
 }
 
 /** AUTH-003. AUTH-006: a wrong password and an unknown email look identical. */
@@ -96,6 +109,7 @@ export async function requestPasswordReset(email: string): Promise<ActionResult<
     redirectTo: `${origin}/auth/callback?next=${encodeURIComponent("/auth/reset-password")}`,
   });
 
+  if (error && isEmailSendLimit(error)) return fail("EMAIL_SEND_LIMIT");
   if (error?.status === 429) return fail("RATE_LIMITED");
   return ok(null);
 }
