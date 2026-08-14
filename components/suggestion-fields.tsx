@@ -113,7 +113,16 @@ export function SuggestionFields({
 
           <Input label="العنوان" name="title" placeholder="بادل في النخيل" maxLength={80} required />
           <Textarea label="تفاصيل (اختياري)" name="description" maxLength={500} rows={2} />
-          <Input label="المكان (اختياري)" name="location" maxLength={120} />
+          {/* Accepts a pasted Google Maps link or a plain place name; either
+              renders as a tappable map link on the plan. */}
+          <Input
+            label="المكان (اختياري)"
+            name="location"
+            maxLength={300}
+            dir="auto"
+            placeholder="الصق رابط قوقل مابس، أو اكتب اسم المكان"
+            hint="لو كتبت اسم المكان بنفتحه لك على الخريطة"
+          />
           <Input
             label="رابط (اختياري)"
             name="externalUrl"

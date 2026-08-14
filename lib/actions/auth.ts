@@ -1,20 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { siteOrigin } from "@/lib/site-url";
 import { fail, ok, type ActionResult } from "@/lib/domain/errors";
 import { emailSchema, firstIssue, passwordSchema, signInSchema, signUpSchema } from "@/lib/domain/schemas";
 import { safeNext } from "@/lib/auth";
 
-async function siteOrigin() {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL;
-  if (configured) return configured.replace(/\/$/, "");
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
-}
+// Origin resolution lives in one place now — see lib/site-url.ts for why.
 
 /**
  * AUTH-001/AUTH-002: register and require email confirmation. AUTH-006: the

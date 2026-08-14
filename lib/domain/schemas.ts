@@ -106,7 +106,8 @@ export const suggestionFieldsSchema = z.object({
   description: z.string().trim().max(500).nullable().optional(),
   proposedStartAt: z.string().datetime({ offset: true }),
   proposedEndAt: z.string().datetime({ offset: true }),
-  location: z.string().trim().max(120).nullable().optional(),
+  // Holds a place name or a pasted map link, so it shares external_url's ceiling.
+  location: z.string().trim().max(2048).nullable().optional(),
   externalUrl: externalUrlSchema.nullable().optional(),
 });
 

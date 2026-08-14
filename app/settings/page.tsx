@@ -2,6 +2,7 @@ import { Shell } from "@/components/shell";
 import { Section } from "@/components/app-shell";
 import { Badge, Card } from "@/components/ui/card";
 import { SignOutButton } from "@/components/sign-out-button";
+import { EnableBrowserNotifications } from "@/components/notification-popups";
 import { EditProfileForm } from "./edit-profile-form";
 import { requireProfile } from "@/lib/auth";
 
@@ -29,6 +30,16 @@ export default async function SettingsPage() {
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
               <span style={{ font: "var(--body-md)", color: "var(--text-body)", flex: 1 }}>التوقيت</span>
               <Badge tone="neutral">السعودية</Badge>
+            </div>
+          </Card>
+          <Card variant="flat" tone="quiet">
+            <div style={{ display: "grid", gap: "var(--space-3)" }}>
+              <span style={{ font: "var(--title-sm)", color: "var(--text-strong)" }}>التنبيهات</span>
+              <span style={{ font: "var(--body-sm)", color: "var(--text-muted)" }}>
+                التنبيهات تطلع لك داخل التطبيق على طول. فعّل تنبيهات المتصفح عشان توصلك حتى لو التبويب
+                في الخلفية.
+              </span>
+              <EnableBrowserNotifications />
             </div>
           </Card>
           <SignOutButton />

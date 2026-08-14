@@ -8,7 +8,8 @@ import { Badge, Card, EmptyState } from "@/components/ui/card";
 import { Avatar, AvatarStack, CategoryIcon, CountMeter } from "@/components/ui/identity";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
-import { getGroupCalendar, getOpenRounds, getUpcomingPlans } from "@/lib/data/queries";
+import { getGroupCalendar, getOpenRounds, getRound, getUpcomingPlans } from "@/lib/data/queries";
+import { InlineVoteCard } from "@/components/inline-vote-card";
 import { formatDayShort, formatRange, formatTime, toArabicDigits } from "@/lib/domain/format";
 import type { OverlapSlot } from "@/lib/domain/types";
 
@@ -33,6 +34,12 @@ export default async function GroupPage({ params }: { params: Promise<{ groupId:
 
   const groupRounds = rounds.filter((r) => r.groupId === groupId);
   const groupPlans = plans.filter((p) => p.groupId === groupId);
+
+  // Load each open round in full so its ballot can be voted on right here,
+  // rather than making people open a separate page to tick one box.
+  const openBallots = (await Promise.all(groupRounds.map((r) => getRound(r.id)))).filter(
+    (r): r is NonNullable<typeof r> => r !== null && r.suggestions.length > 0,
+  );
   const me = members.find((m) => m.userId === profile.id);
   const best = overlaps[0];
   const iHaveAvailability = slots.some((s) => s.userId === profile.id);
@@ -120,7 +127,35 @@ export default async function GroupPage({ params }: { params: Promise<{ groupId:
         )}
       </Section>
 
-      {groupRounds.length > 0 ? (
+      {openBallots.length > 0 ? (
+        <Section title="تصويت مفتوح">
+          <div style={{ display: "grid", gap: "var(--space-3)" }}>
+            {openBallots.map((r) => (
+              <InlineVoteCard
+                key={r.id}
+                roundId={r.id}
+                groupId={groupId}
+                windowStartAt={r.windowStartAt.toISOString()}
+                windowEndAt={r.windowEndAt.toISOString()}
+                viewerIsAdmin={r.viewerIsAdmin}
+                availableCount={r.availableCount}
+                totalMembers={r.totalMembers}
+                suggestions={r.suggestions.map((s) => ({
+                  id: s.id,
+                  category: s.category,
+                  title: s.title,
+                  location: s.location,
+                  startAt: s.startAt.toISOString(),
+                  endAt: s.endAt.toISOString(),
+                  suggestedByName: s.suggestedByName,
+                  votes: s.votes,
+                  mine: s.mine,
+                }))}
+              />
+            ))}
+          </div>
+        </Section>
+      ) : groupRounds.length > 0 ? (
         <Section title="تصويت مفتوح">
           <div style={{ display: "grid", gap: "var(--space-3)" }}>
             {groupRounds.map((r) => (
@@ -129,8 +164,7 @@ export default async function GroupPage({ params }: { params: Promise<{ groupId:
                   <span style={{ font: "var(--title-md)", color: "var(--text-strong)", flex: 1 }}>
                     خطة {formatDayShort(r.windowStartAt)} {formatTime(r.windowStartAt)}
                   </span>
-                  <Badge tone="accent">{toArabicDigits(r.suggestionCount)} خطط</Badge>
-                  {!r.iVoted ? <Badge tone="plum">صوّت</Badge> : null}
+                  <Badge tone="plum">اقترح خطة</Badge>
                 </div>
               </Card>
             ))}

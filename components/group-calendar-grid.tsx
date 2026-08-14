@@ -6,19 +6,37 @@ import { Avatar } from "@/components/ui/identity";
 import {
   addDays,
   isWeekend,
+  riyadhDateTime,
+  riyadhParts,
   riyadhStartOfDay,
   toArabicDigits,
   weekdayName,
-  riyadhParts,
 } from "@/lib/domain/format";
 
 type Member = { userId: string; displayName: string; color: number };
 type Slot = { userId: string; startAt: string; endAt: string };
 
 /**
+ * The five AVL-003 quick blocks, mirrored from the availability editor so the
+ * calendar reads back in the same units people entered. 12–2 ص is the two hours
+ * after that evening, so it lands on the next calendar date.
+ */
+const BLOCKS = [
+  { id: "b1", short: "٤", label: "٤ - ٦ م", startHour: 16, endHour: 18 },
+  { id: "b2", short: "٦", label: "٦ - ٨ م", startHour: 18, endHour: 20 },
+  { id: "b3", short: "٨", label: "٨ - ١٠ م", startHour: 20, endHour: 22 },
+  { id: "b4", short: "١٠", label: "١٠ م - ١٢ ص", startHour: 22, endHour: 24 },
+  { id: "b5", short: "١٢", label: "١٢ - ٢ ص", startHour: 24, endHour: 26 },
+] as const;
+
+/**
  * AVL-010 — seven days at a time across the 28-day horizon.
  * AVL-009/GRP-010 — each row carries the member's avatar, name, and count, so
- * the colour is an accent rather than the only cue.
+ * colour is an accent rather than the only cue.
+ *
+ * Each day is split into the five time blocks rather than being a single
+ * free/busy square: seeing *which hours* overlap is the whole point of the
+ * screen, and a day-level cell can't answer "when".
  */
 export function GroupCalendarGrid({
   members,
@@ -42,17 +60,41 @@ export function GroupCalendarGrid({
     [slots],
   );
 
-  // A member counts as free on a day when any interval overlaps that Riyadh day.
-  const isFree = (userId: string, day: Date) => {
-    const dayEnd = addDays(day, 1);
-    return parsed.some((s) => s.userId === userId && s.start < dayEnd && s.end > day);
+  /** A member covers a block when an interval spans the whole block. */
+  const coversBlock = (userId: string, day: Date, block: (typeof BLOCKS)[number]) => {
+    const start = riyadhDateTime(day, block.startHour);
+    const end = riyadhDateTime(day, block.endHour);
+    return parsed.some((s) => s.userId === userId && s.start <= start && s.end >= end);
   };
 
-  const perDayCounts = days.map((day) => members.filter((m) => isFree(m.userId, day)).length);
   const total = members.length;
 
+  /** How many members are free in each block of a day. */
+  const blockCounts = (day: Date) =>
+    BLOCKS.map((b) => members.filter((m) => coversBlock(m.userId, day, b)).length);
+
+  /** The block with the most people free that day — the "when" headline. */
+  const bestBlock = (day: Date) => {
+    const counts = blockCounts(day);
+    const max = Math.max(...counts);
+    if (max === 0) return null;
+    const idx = counts.indexOf(max);
+    return { block: BLOCKS[idx], count: max };
+  };
+
+  const heat = (n: number) =>
+    n === 0
+      ? "var(--heat-0)"
+      : n === total && total > 0
+        ? "var(--heat-full)"
+        : n >= Math.ceil(total * 0.75)
+          ? "var(--heat-3)"
+          : n >= Math.ceil(total * 0.4)
+            ? "var(--heat-2)"
+            : "var(--heat-1)";
+
   return (
-    <div style={{ display: "grid", gap: "var(--space-3)" }}>
+    <div style={{ display: "grid", gap: "var(--space-4)" }}>
       <SegmentedTabs
         label="الأسبوع"
         active={week}
@@ -66,27 +108,68 @@ export function GroupCalendarGrid({
       />
 
       <div style={{ overflowX: "auto" }}>
-        <div style={{ display: "grid", gap: "var(--space-3)", minWidth: 460 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "110px repeat(7, 1fr)", gap: 6 }}>
+        <div style={{ display: "grid", gap: "var(--space-3)", minWidth: 620 }}>
+          {/* Day header with the best time of that day underneath. */}
+          <div style={{ display: "grid", gridTemplateColumns: "120px repeat(7, 1fr)", gap: 6 }}>
             <span />
+            {days.map((d) => {
+              const best = bestBlock(d);
+              return (
+                <span key={d.toISOString()} style={{ display: "grid", gap: 2, justifyItems: "center" }}>
+                  <span style={{ font: "var(--label-sm)", color: isWeekend(d) ? "var(--accent-2)" : "var(--text-muted)" }}>
+                    {weekdayName(d).replace("ال", "")}
+                  </span>
+                  <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16, color: "var(--text-strong)" }}>
+                    {toArabicDigits(riyadhParts(d).day)}
+                  </span>
+                  <span
+                    style={{
+                      font: "var(--label-sm)",
+                      fontSize: 11,
+                      color: best ? "var(--accent-2)" : "var(--text-faint)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {best ? `${best.block.label} · ${toArabicDigits(best.count)}` : "—"}
+                  </span>
+                </span>
+              );
+            })}
+          </div>
+
+          {/* Block legend, so the five sub-bars in each cell are readable. */}
+          <div style={{ display: "grid", gridTemplateColumns: "120px repeat(7, 1fr)", gap: 6 }}>
+            <span style={{ font: "var(--label-sm)", color: "var(--text-faint)" }}>الفترات</span>
             {days.map((d) => (
-              <span key={d.toISOString()} style={{ display: "grid", gap: 2, justifyItems: "center" }}>
-                <span style={{ font: "var(--label-sm)", color: isWeekend(d) ? "var(--accent-2)" : "var(--text-muted)" }}>
-                  {weekdayName(d).replace("ال", "")}
-                </span>
-                <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 16, color: "var(--text-strong)" }}>
-                  {toArabicDigits(riyadhParts(d).day)}
-                </span>
+              <span key={d.toISOString()} style={{ display: "flex", gap: 2 }}>
+                {BLOCKS.map((b) => (
+                  <span
+                    key={b.id}
+                    title={b.label}
+                    style={{
+                      flex: 1,
+                      textAlign: "center",
+                      font: "var(--label-sm)",
+                      fontSize: 9,
+                      color: "var(--text-faint)",
+                    }}
+                  >
+                    {b.short}
+                  </span>
+                ))}
               </span>
             ))}
           </div>
 
           {members.map((m) => {
-            const count = days.filter((d) => isFree(m.userId, d)).length;
+            const freeBlocks = days.reduce(
+              (sum, d) => sum + BLOCKS.filter((b) => coversBlock(m.userId, d, b)).length,
+              0,
+            );
             return (
               <div
                 key={m.userId}
-                style={{ display: "grid", gridTemplateColumns: "110px repeat(7, 1fr)", gap: 6, alignItems: "center" }}
+                style={{ display: "grid", gridTemplateColumns: "120px repeat(7, 1fr)", gap: 6, alignItems: "center" }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                   <Avatar name={m.displayName} memberColor={m.color} size="sm" ring={false} />
@@ -104,29 +187,37 @@ export function GroupCalendarGrid({
                     {m.userId === currentUserId ? " (أنت)" : ""}
                   </span>
                 </span>
-                {days.map((d) => {
-                  const on = isFree(m.userId, d);
-                  return (
-                    <span
-                      key={d.toISOString()}
-                      title={`${m.displayName} — ${weekdayName(d)} ${toArabicDigits(riyadhParts(d).day)}: ${on ? "فاضي" : "مو فاضي"}`}
-                      style={{
-                        height: 30,
-                        borderRadius: 9,
-                        background: on ? `var(--member-${String(m.color).padStart(2, "0")})` : "var(--heat-0)",
-                      }}
-                    />
-                  );
-                })}
-                <span className="sr-only">{`${m.displayName}: ${count} أيام`}</span>
+
+                {days.map((d) => (
+                  <span key={d.toISOString()} style={{ display: "flex", gap: 2 }}>
+                    {BLOCKS.map((b) => {
+                      const on = coversBlock(m.userId, d, b);
+                      return (
+                        <span
+                          key={b.id}
+                          title={`${m.displayName} — ${weekdayName(d)} ${toArabicDigits(riyadhParts(d).day)}، ${b.label}: ${on ? "فاضي" : "مو فاضي"}`}
+                          style={{
+                            flex: 1,
+                            height: 26,
+                            borderRadius: 5,
+                            background: on ? `var(--member-${String(m.color).padStart(2, "0")})` : "var(--heat-0)",
+                          }}
+                        />
+                      );
+                    })}
+                  </span>
+                ))}
+
+                <span className="sr-only">{`${m.displayName}: ${freeBlocks} فترة`}</span>
               </div>
             );
           })}
 
+          {/* Per-block totals, so a full overlap is visible at the hour level. */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "110px repeat(7, 1fr)",
+              gridTemplateColumns: "120px repeat(7, 1fr)",
               gap: 6,
               alignItems: "center",
               paddingTop: "var(--space-2)",
@@ -134,35 +225,40 @@ export function GroupCalendarGrid({
             }}
           >
             <span style={{ font: "var(--label-sm)", fontWeight: 700, color: "var(--text-muted)" }}>كم واحد فاضي</span>
-            {perDayCounts.map((n, i) => (
-              <span
-                key={i}
-                style={{
-                  display: "grid",
-                  placeItems: "center",
-                  height: 30,
-                  borderRadius: 9,
-                  background:
-                    n === total && total > 0
-                      ? "var(--heat-full)"
-                      : n >= Math.ceil(total * 0.75)
-                        ? "var(--heat-3)"
-                        : n >= Math.ceil(total * 0.4)
-                          ? "var(--heat-2)"
-                          : n >= 1
-                            ? "var(--heat-1)"
-                            : "var(--heat-0)",
-                  color: n >= Math.ceil(total * 0.75) && n > 0 ? "#fff" : "var(--text-body)",
-                  font: "var(--label-sm)",
-                  fontWeight: 700,
-                }}
-              >
-                {toArabicDigits(n)}
-              </span>
-            ))}
+            {days.map((d) => {
+              const counts = blockCounts(d);
+              return (
+                <span key={d.toISOString()} style={{ display: "flex", gap: 2 }}>
+                  {counts.map((n, i) => (
+                    <span
+                      key={BLOCKS[i].id}
+                      title={`${BLOCKS[i].label}: ${toArabicDigits(n)} من ${toArabicDigits(total)}`}
+                      style={{
+                        flex: 1,
+                        display: "grid",
+                        placeItems: "center",
+                        height: 24,
+                        borderRadius: 5,
+                        background: heat(n),
+                        color: n >= Math.ceil(total * 0.75) && n > 0 ? "#fff" : "var(--text-body)",
+                        font: "var(--label-sm)",
+                        fontSize: 11,
+                        fontWeight: 700,
+                      }}
+                    >
+                      {n > 0 ? toArabicDigits(n) : ""}
+                    </span>
+                  ))}
+                </span>
+              );
+            })}
           </div>
         </div>
       </div>
+
+      <span style={{ font: "var(--body-sm)", color: "var(--text-faint)" }}>
+        كل عمود مقسوم على فترات: {BLOCKS.map((b) => b.label).join(" · ")} — بتوقيت السعودية.
+      </span>
     </div>
   );
 }

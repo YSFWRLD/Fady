@@ -5,7 +5,12 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { markAllNotificationsRead, markNotificationRead } from "@/lib/actions/plans";
-import { formatRelative, formatRange, toArabicDigits } from "@/lib/domain/format";
+import { formatRelative, toArabicDigits } from "@/lib/domain/format";
+import {
+  NOTIFICATION_ICONS,
+  describeNotification,
+  notificationHref,
+} from "@/lib/domain/notifications";
 
 type Item = {
   id: string;
@@ -19,64 +24,8 @@ type Item = {
   createdAt: string;
 };
 
-/** §7.4 — Arabic copy and icon per notification type. */
-const PRESENTATION: Record<string, { icon: string; tone: string }> = {
-  friend_request: { icon: "ph-user-plus", tone: "var(--text-muted)" },
-  full_overlap: { icon: "ph-confetti", tone: "var(--celebrate-fg)" },
-  near_overlap: { icon: "ph-eyes", tone: "var(--accent-hover)" },
-  suggestion_created: { icon: "ph-lightbulb", tone: "var(--accent-hover)" },
-  vote_activity: { icon: "ph-check-square-offset", tone: "var(--accent-hover)" },
-  plan_confirmed: { icon: "ph-confetti", tone: "var(--celebrate-fg)" },
-  rsvp_required: { icon: "ph-hand-waving", tone: "var(--accent-2)" },
-  plan_cancelled: { icon: "ph-x-circle", tone: "var(--danger)" },
-  plan_reminder_24h: { icon: "ph-alarm", tone: "var(--text-muted)" },
-};
-
-function describe(item: Item): string {
-  const actor = item.actorName ?? "أحدهم";
-  const start = item.payload.start_at ? new Date(String(item.payload.start_at)) : null;
-  const end = item.payload.end_at ? new Date(String(item.payload.end_at)) : null;
-  const available = Number(item.payload.available ?? 0);
-  const total = Number(item.payload.total ?? 0);
-
-  switch (item.type) {
-    case "friend_request":
-      return "جاك طلب صداقة جديد";
-    case "full_overlap":
-      return start && end ? `🎉 كلكم فاضين ${formatRange(start, end)}` : "🎉 كلكم فاضين";
-    case "near_overlap":
-      return start && end
-        ? `👀 ${toArabicDigits(available)} من ${toArabicDigits(total)} فاضين ${formatRange(start, end)}`
-        : "👀 أغلبكم فاضين";
-    case "suggestion_created":
-      return `${actor} اقترح خطة`;
-    case "vote_activity":
-      return "فيه تصويت جديد على الخطة";
-    case "plan_confirmed":
-      return "🎉 الخطة ثبتت";
-    case "rsvp_required":
-      return "بتجي؟ أكّد حضورك";
-    case "plan_cancelled":
-      return "الخطة انلغت";
-    case "plan_reminder_24h":
-      return "خطتكم بكرة";
-    default:
-      return "تحديث جديد";
-  }
-}
-
-/** Notifications always link to an authorized internal route (§7.4). */
-function hrefFor(item: Item): string {
-  if (item.type === "friend_request") return "/friends";
-  if (!item.groupId) return "/home";
-  if (item.type === "suggestion_created" || item.type === "vote_activity") {
-    return item.entityId ? `/groups/${item.groupId}/plans/${item.entityId}` : `/groups/${item.groupId}`;
-  }
-  if (item.type === "plan_confirmed" || item.type === "rsvp_required" || item.type === "plan_cancelled" || item.type === "plan_reminder_24h") {
-    return item.entityId ? `/groups/${item.groupId}/events/${item.entityId}` : `/groups/${item.groupId}`;
-  }
-  return `/groups/${item.groupId}`;
-}
+const describe = (item: Item) => describeNotification(item.type, item.payload, item.actorName);
+const hrefFor = (item: Item) => notificationHref(item);
 
 export function NotificationInbox({ items }: { items: Item[] }) {
   const router = useRouter();
@@ -109,7 +58,7 @@ export function NotificationInbox({ items }: { items: Item[] }) {
       ) : null}
 
       {items.map((item) => {
-        const p = PRESENTATION[item.type] ?? { icon: "ph-bell", tone: "var(--text-muted)" };
+        const p = NOTIFICATION_ICONS[item.type] ?? { icon: "ph-bell", tone: "var(--text-muted)" };
         return (
           <Card key={item.id} variant={item.unread ? "flat" : "bare"} tone={item.unread ? "surface" : "quiet"} onClick={() => open(item)}>
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>

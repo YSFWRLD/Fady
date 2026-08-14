@@ -8,9 +8,11 @@ import {
   getGroupCalendar,
   getMyGroups,
   getOpenRounds,
+  getRound,
   getUpcomingPlans,
   type GroupSummary,
 } from "@/lib/data/queries";
+import { InlineVoteCard } from "@/components/inline-vote-card";
 import type { OverlapSlot } from "@/lib/domain/types";
 
 export const dynamic = "force-dynamic";
@@ -37,10 +39,17 @@ export default async function HomePage() {
     .map((x) => ({ group: x.group, slot: x.overlaps[0] }))
     .sort((a, b) => Number(b.slot.isFullMatch) - Number(a.slot.isFullMatch) || b.slot.availableCount - a.slot.availableCount);
 
-  const needsResponse = [
-    ...plans.filter((p) => p.myStatus === "pending").map((p) => ({ kind: "rsvp" as const, plan: p })),
-    ...rounds.filter((r) => !r.iVoted && r.suggestionCount > 0).map((r) => ({ kind: "vote" as const, round: r })),
-  ];
+  const needsResponse = plans
+    .filter((p) => p.myStatus === "pending")
+    .map((p) => ({ kind: "rsvp" as const, plan: p }));
+
+  // Open rounds render as a full ballot here, so voting never requires opening
+  // another page.
+  const ballots = (
+    await Promise.all(
+      rounds.filter((r) => r.suggestionCount > 0).map((r) => getRound(r.id)),
+    )
+  ).filter((r): r is NonNullable<typeof r> => r !== null && r.suggestions.length > 0);
 
   const groupsNeedingAvailability = groups.filter(
     (g) => !overlapsByGroup.find((o) => o.group.id === g.id)?.overlaps.length,
@@ -100,54 +109,65 @@ export default async function HomePage() {
       {needsResponse.length > 0 ? (
         <Section title="يحتاج ردك">
           <div style={{ display: "grid", gap: "var(--space-3)" }}>
-            {needsResponse.map((item) =>
-              item.kind === "rsvp" ? (
-                <Card key={`rsvp-${item.plan.id}`} variant="flat" href={`/groups/${item.plan.groupId}/events/${item.plan.id}`}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
-                    <span
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: "var(--radius-sm)",
-                        background: "var(--accent-2-quiet)",
-                        color: "var(--accent-2)",
-                        display: "grid",
-                        placeItems: "center",
-                        fontSize: 20,
-                      }}
-                    >
-                      <i className="ph-bold ph-hand-waving" aria-hidden="true" />
-                    </span>
-                    <span style={{ font: "var(--body-md)", color: "var(--text-body)", flex: 1 }}>
-                      بتجي؟ أكّد حضورك — {item.plan.title}
-                    </span>
-                  </div>
-                </Card>
-              ) : (
-                <Card key={`vote-${item.round.id}`} variant="flat" href={`/groups/${item.round.groupId}/plans/${item.round.id}`}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
-                    <span
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: "var(--radius-sm)",
-                        background: "var(--accent-quiet)",
-                        color: "var(--accent-hover)",
-                        display: "grid",
-                        placeItems: "center",
-                        fontSize: 20,
-                      }}
-                    >
-                      <i className="ph-bold ph-check-square-offset" aria-hidden="true" />
-                    </span>
-                    <span style={{ font: "var(--body-md)", color: "var(--text-body)", flex: 1 }}>
-                      صوّت على خطة {formatDayShort(item.round.windowStartAt)} — {item.round.groupName}
-                    </span>
-                    <Badge tone="accent">{toArabicDigits(item.round.suggestionCount)} خطط</Badge>
-                  </div>
-                </Card>
-              ),
-            )}
+            {needsResponse.map((item) => (
+              <Card
+                key={`rsvp-${item.plan.id}`}
+                variant="flat"
+                href={`/groups/${item.plan.groupId}/events/${item.plan.id}`}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+                  <span
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "var(--radius-sm)",
+                      background: "var(--accent-2-quiet)",
+                      color: "var(--accent-2)",
+                      display: "grid",
+                      placeItems: "center",
+                      fontSize: 20,
+                    }}
+                  >
+                    <i className="ph-bold ph-hand-waving" aria-hidden="true" />
+                  </span>
+                  <span style={{ font: "var(--body-md)", color: "var(--text-body)", flex: 1 }}>
+                    بتجي؟ أكّد حضورك — {item.plan.title}
+                  </span>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </Section>
+      ) : null}
+
+      {ballots.length > 0 ? (
+        <Section title="صوّت على الخطة">
+          <div style={{ display: "grid", gap: "var(--space-3)" }}>
+            {ballots.map((r) => (
+              <div key={r.id} style={{ display: "grid", gap: "var(--space-2)" }}>
+                <span style={{ font: "var(--body-sm)", color: "var(--text-muted)" }}>{r.groupName}</span>
+                <InlineVoteCard
+                  roundId={r.id}
+                  groupId={r.groupId}
+                  windowStartAt={r.windowStartAt.toISOString()}
+                  windowEndAt={r.windowEndAt.toISOString()}
+                  viewerIsAdmin={r.viewerIsAdmin}
+                  availableCount={r.availableCount}
+                  totalMembers={r.totalMembers}
+                  suggestions={r.suggestions.map((s) => ({
+                    id: s.id,
+                    category: s.category,
+                    title: s.title,
+                    location: s.location,
+                    startAt: s.startAt.toISOString(),
+                    endAt: s.endAt.toISOString(),
+                    suggestedByName: s.suggestedByName,
+                    votes: s.votes,
+                    mine: s.mine,
+                  }))}
+                />
+              </div>
+            ))}
           </div>
         </Section>
       ) : null}

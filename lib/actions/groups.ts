@@ -11,14 +11,14 @@ import {
   uuidSchema,
 } from "@/lib/domain/schemas";
 import type { GroupRole } from "@/lib/domain/types";
+import { absoluteUrl } from "@/lib/site-url";
 
 /**
  * SHR-003: a share link carries only the opaque invite token — never a group id,
  * name, or member data.
  */
-function inviteUrl(token: string) {
-  const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
-  return `${origin}/join/${token}`;
+async function inviteUrl(token: string) {
+  return absoluteUrl(`/join/${token}`);
 }
 
 /** GRP-001 — group, owner membership, colour, and first invite in one transaction. */
@@ -41,7 +41,7 @@ export async function createGroup(input: {
 
   revalidatePath("/groups");
   revalidatePath("/home");
-  return ok({ groupId: row.group_id, inviteUrl: inviteUrl(row.invite_token) });
+  return ok({ groupId: row.group_id, inviteUrl: await inviteUrl(row.invite_token) });
 }
 
 /** GRP-004 — owner/admin edit the name and image. */
@@ -76,7 +76,7 @@ export async function rotateGroupInvite(groupId: string): Promise<ActionResult<{
   if (error) return { ok: false, error: mapPostgresError(error) };
 
   revalidatePath(`/groups/${groupId}`);
-  return ok({ url: inviteUrl(data as unknown as string) });
+  return ok({ url: await inviteUrl(data as unknown as string) });
 }
 
 /** INV-005/INV-006 — atomic redemption; duplicates route to the group. */

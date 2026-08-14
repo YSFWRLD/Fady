@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { AppShell } from "./app-shell";
+import { NotificationPopups } from "./notification-popups";
 import { requireProfile } from "@/lib/auth";
 import { getMyGroups, getUnreadCount } from "@/lib/data/queries";
 
@@ -37,6 +38,8 @@ export async function Shell({
       groups={groups.map((g) => ({ id: g.id, name: g.name, color: g.color }))}
     >
       {children}
+      {/* Mounted inside the shell so popups reach every authenticated screen. */}
+      <NotificationPopups userId={profile.id} />
     </AppShell>
   );
 }

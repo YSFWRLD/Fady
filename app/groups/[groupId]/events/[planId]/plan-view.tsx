@@ -10,6 +10,7 @@ import { Avatar, CategoryIcon } from "@/components/ui/identity";
 import { cancelConfirmedPlan, respondAttendance } from "@/lib/actions/plans";
 import { errorMessage } from "@/lib/domain/errors";
 import { formatDayLong, formatRange, toArabicDigits } from "@/lib/domain/format";
+import { locationLabel, mapsUrl } from "@/lib/domain/maps";
 import type { AttendanceStatus, ConfirmedPlanStatus, PlanCategory } from "@/lib/domain/types";
 
 type Plan = {
@@ -100,9 +101,15 @@ export function PlanView({ plan, origin }: { plan: Plan; origin: string }) {
             </span>
           ) : null}
           {plan.location ? (
-            <span dir="auto" style={{ font: "var(--body-md)", color: "var(--text-body)" }}>
-              <i className="ph-bold ph-map-pin" aria-hidden="true" /> {plan.location}
-            </span>
+            <a
+              href={mapsUrl(plan.location) ?? undefined}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              dir="auto"
+              style={{ font: "var(--body-md)", fontWeight: 700 }}
+            >
+              <i className="ph-bold ph-map-pin" aria-hidden="true" /> {locationLabel(plan.location)}
+            </a>
           ) : null}
           {plan.externalUrl ? (
             <a href={plan.externalUrl} target="_blank" rel="noopener noreferrer nofollow" dir="ltr" style={{ font: "var(--body-sm)" }}>

@@ -10,6 +10,7 @@ import { CategoryIcon, CountMeter } from "@/components/ui/identity";
 import { addSuggestion, cancelPlanningRound, closePlanningRound, setSuggestionVote, withdrawSuggestion } from "@/lib/actions/planning";
 import { errorMessage } from "@/lib/domain/errors";
 import { formatRange, toArabicDigits } from "@/lib/domain/format";
+import { locationLabel, mapsUrl } from "@/lib/domain/maps";
 import { createClient } from "@/lib/supabase/client";
 import type { PlanCategory, PlanningRoundStatus } from "@/lib/domain/types";
 
@@ -229,9 +230,15 @@ export function RoundView({ round }: { round: Round }) {
                     </span>
                   ) : null}
                   {s.location ? (
-                    <span dir="auto" style={{ font: "var(--body-sm)", color: "var(--text-muted)" }}>
-                      <i className="ph-bold ph-map-pin" aria-hidden="true" /> {s.location}
-                    </span>
+                    <a
+                      href={mapsUrl(s.location) ?? undefined}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      dir="auto"
+                      style={{ font: "var(--body-sm)" }}
+                    >
+                      <i className="ph-bold ph-map-pin" aria-hidden="true" /> {locationLabel(s.location)}
+                    </a>
                   ) : null}
                   {s.externalUrl ? (
                     // PLN-009: rendered as a plain link; never fetched or previewed.

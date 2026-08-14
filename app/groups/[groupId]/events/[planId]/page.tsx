@@ -3,6 +3,7 @@ import { Shell } from "@/components/shell";
 import { PlanView } from "./plan-view";
 import { requireProfile } from "@/lib/auth";
 import { getPlan } from "@/lib/data/queries";
+import { siteOrigin } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export default async function PlanPage({ params }: { params: Promise<{ groupId: 
 
   // Resolved on the server so the share link is identical in the SSR output and
   // after hydration — deriving it from `window` produced a hydration mismatch.
-  const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+  const origin = await siteOrigin();
 
   return (
     <Shell back={`/groups/${groupId}`}>
