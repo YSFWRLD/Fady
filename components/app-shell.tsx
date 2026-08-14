@@ -356,6 +356,9 @@ export function AppShell({
           }}
         >
           <div style={{ width: "100%", maxWidth: 640, display: "grid", gap: "var(--space-6)", alignContent: "start" }}>
+            {/* Back lives here, not only in the mobile header — that header is
+                hidden above 900px, which left desktop with no way back. */}
+            {back ? <BackLink href={back} /> : null}
             {title ? (
               <div style={{ display: "grid", gap: "var(--space-2)" }}>
                 <h1
@@ -389,6 +392,45 @@ export function AppShell({
 
       <BottomNav active={active} />
     </div>
+  );
+}
+
+/**
+ * Back navigation shown in the content column at every width. Prefers real
+ * history so it returns where you actually came from, falling back to the
+ * page's declared parent on a cold load (a shared link, or a fresh tab).
+ */
+function BackLink({ href }: { href: string }) {
+  const router = useRouter();
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (typeof window !== "undefined" && window.history.length > 1) router.back();
+        else router.push(href);
+      }}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "var(--space-2)",
+        minHeight: "var(--tap-min)",
+        padding: "8px 16px 8px 12px",
+        borderRadius: "var(--radius-pill)",
+        border: "none",
+        background: "var(--surface-quiet)",
+        color: "var(--text-body)",
+        font: "var(--label-md)",
+        fontWeight: 700,
+        cursor: "pointer",
+        justifySelf: "start",
+      }}
+    >
+      <span style={{ fontSize: 18 }} aria-hidden="true">
+        <i className="ph-bold ph-arrow-right" />
+      </span>
+      رجوع
+    </button>
   );
 }
 

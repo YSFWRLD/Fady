@@ -7,7 +7,7 @@ import { ShareButton } from "@/components/share-button";
 import { Button } from "@/components/ui/button";
 import { Badge, Banner, Card } from "@/components/ui/card";
 import { Avatar, CategoryIcon } from "@/components/ui/identity";
-import { cancelConfirmedPlan, respondAttendance } from "@/lib/actions/plans";
+import { cancelConfirmedPlan, respondAttendance, type PlanConflict } from "@/lib/actions/plans";
 import { errorMessage } from "@/lib/domain/errors";
 import { formatDayLong, formatRange, toArabicDigits } from "@/lib/domain/format";
 import { locationLabel, mapsUrl } from "@/lib/domain/maps";
@@ -35,20 +35,30 @@ export function PlanView({ plan, origin }: { plan: Plan; origin: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [myStatus, setMyStatus] = useState<AttendanceStatus | null>(plan.myStatus);
+  const [conflicts, setConflicts] = useState<PlanConflict[] | null>(null);
   const [pending, startTransition] = useTransition();
 
-  function respond(status: "going" | "not_going") {
+  function respond(status: "going" | "not_going", withdrawFrom?: string[]) {
     const previous = myStatus;
     setMyStatus(status); // §8.5: RSVP updates optimistically.
     setError(null);
 
     startTransition(async () => {
-      const result = await respondAttendance({ planId: plan.id, status });
+      const result = await respondAttendance({ planId: plan.id, status, withdrawFrom });
       if (!result.ok) {
         setMyStatus(previous);
         setError(errorMessage(result.error));
         return;
       }
+
+      // Accepting would double-book: ask before writing anything.
+      if (result.data.outcome === "conflict") {
+        setMyStatus(previous);
+        setConflicts(result.data.conflicts);
+        return;
+      }
+
+      setConflicts(null);
       router.refresh();
     });
   }
@@ -126,6 +136,68 @@ export function PlanView({ plan, origin }: { plan: Plan; origin: string }) {
       ) : null}
 
       {error ? <Banner tone="error">{error}</Banner> : null}
+
+      {/* §7.5: the clash is surfaced and resolved by an explicit choice, never
+          auto-resolved — but it is resolved here rather than sending the member
+          off to the other plan to undo it. */}
+      {conflicts && conflicts.length > 0 ? (
+        <Card variant="flat" tone="quiet">
+          <div style={{ display: "grid", gap: "var(--space-3)" }}>
+            <span style={{ font: "var(--title-sm)", color: "var(--text-strong)" }}>
+              عندك خطة ثانية بنفس الوقت
+            </span>
+            <span style={{ font: "var(--body-md)", color: "var(--text-body)" }}>
+              أنت قايل إنك جاي على:
+            </span>
+
+            <div style={{ display: "grid", gap: "var(--space-2)" }}>
+              {conflicts.map((c) => (
+                <div
+                  key={c.planId}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "var(--space-3)",
+                    padding: "10px 12px",
+                    borderRadius: "var(--radius-md)",
+                    background: "var(--surface-card)",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ display: "grid", gap: 2, flex: 1, minWidth: 140 }}>
+                    <span dir="auto" style={{ font: "var(--label-md)", fontWeight: 700, color: "var(--text-strong)" }}>
+                      {c.title}
+                    </span>
+                    <span style={{ font: "var(--body-sm)", color: "var(--text-muted)" }}>
+                      {formatRange(new Date(c.startAt), new Date(c.endAt))} · {c.groupName}
+                    </span>
+                  </div>
+                  <a href={`/groups/${plan.groupId}/events/${c.planId}`} style={{ font: "var(--body-sm)" }}>
+                    شوفها
+                  </a>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+              <Button
+                tone="primary"
+                loading={pending}
+                onClick={() => respond("going", conflicts.map((c) => c.planId))}
+              >
+                {conflicts.length === 1 ? "ألغِ حضوري هناك وأكّد هنا" : "ألغِ حضوري هناك وأكّد هنا"}
+              </Button>
+              <Button tone="quiet" onClick={() => setConflicts(null)}>
+                خلّها زي ما هي
+              </Button>
+            </div>
+
+            <span style={{ font: "var(--body-sm)", color: "var(--text-faint)" }}>
+              هذا يغيّر ردك أنت بس — الخطة الثانية تظل قائمة لبقية القروب.
+            </span>
+          </div>
+        </Card>
+      ) : null}
 
       {!cancelled && plan.status === "scheduled" ? (
         <Card variant="flat">

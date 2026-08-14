@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { AppShell } from "./app-shell";
 import { NotificationPopups } from "./notification-popups";
+import { LiveRefresh } from "./live-refresh";
 import { requireProfile } from "@/lib/auth";
 import { getMyGroups, getUnreadCount } from "@/lib/data/queries";
 
@@ -40,6 +41,7 @@ export async function Shell({
       {children}
       {/* Mounted inside the shell so popups reach every authenticated screen. */}
       <NotificationPopups userId={profile.id} />
+      <LiveRefresh />
     </AppShell>
   );
 }

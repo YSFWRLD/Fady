@@ -237,6 +237,20 @@ export type Database = {
         Args: { p_plan: string; p_status: AttendanceStatus };
         Returns: PlanAttendeeRow;
       };
+      respond_attendance_resolving: {
+        Args: { p_plan: string; p_status: AttendanceStatus; p_withdraw_from?: string[] };
+        Returns: PlanAttendeeRow;
+      };
+      attendance_conflicts: {
+        Args: { p_plan: string };
+        Returns: {
+          plan_id: string;
+          title: string;
+          start_at: string;
+          end_at: string;
+          group_name: string;
+        }[];
+      };
       cancel_confirmed_plan: { Args: { p_plan: string; p_reason?: string | null }; Returns: undefined };
       mark_notification_read: { Args: { p_notification: string }; Returns: undefined };
       mark_all_notifications_read: { Args: Record<never, never>; Returns: undefined };
